@@ -121,3 +121,4 @@ function y() {
 }
 eval "$(zoxide init zsh)"
 alias config='/usr/bin/git --git-dir=/Users/alexander_gusev/.cfg/ --work-tree=/Users/alexander_gusev'
+config config --local status.showUntrackedFiles no
