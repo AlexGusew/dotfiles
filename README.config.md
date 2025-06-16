@@ -8,4 +8,10 @@ Configuration stored inside of `~/.cfg`.
 
 This repo includes NVIM configs as git submodule, stored in `~/.config/nvim`.
 
+### Installation
+
+```sh
+git clone --bare --recurse-submodules git@github.com:AlexGusew/dotfiles.git $HOME/.cfg
+```
+
 Cheers!
