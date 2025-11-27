@@ -1,0 +1,14 @@
+{
+    "custom/volume": {
+        "icon": "⌨",
+        "label": "{}",
+        "truncationSize": -1,
+        "execute": "hyprctl devices -j | jq -r '.keyboards.[] | select(.main == true).active_keymap' | sed 's/English (US)/EN/' | sed 's/Russian/RU/'",
+        "executeOnAction": "",
+        "scrollThreshold": 1,
+        "interval": 1000,
+        "actions": {
+            "onLeftClick": "hyprctl switchxkblayout \"sonix-kn85-keyboard\" next"
+        }
+    }
+}
