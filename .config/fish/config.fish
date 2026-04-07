@@ -15,7 +15,9 @@ function nvm_find_nvmrc
 end
 
 # ~/.config/fish/functions/load_nvm.fish
-function load_nvm --on-variable="PWD"
+# Removed --on-variable="PWD" to prevent running on every directory change
+# Call manually with 'load_nvm' when you need to switch node versions
+function load_nvm
   set -l default_node_version (nvm version default)
   set -l node_version (nvm version)
   set -l nvmrc_path (nvm_find_nvmrc)
@@ -36,11 +38,11 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 
-export EDITOR=nvim
+set -gx EDITOR nvim
 
 # ~/.config/fish/config.fish
-# You must call it on initialization or listening to directory switching won't work
-load_nvm > /dev/stderr
+# Commented out to prevent slow startup - call 'load_nvm' manually when needed
+# load_nvm > /dev/stderr
 
 alias ls 'eza --icons'
 
@@ -53,12 +55,45 @@ fzf --fish | source
 function y
 	set tmp (mktemp -t "yazi-cwd.XXXXXX")
 	yazi $argv --cwd-file="$tmp"
-	if read -z cwd < "$tmp"; and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
+	if read -z cwd < "$tmp"; and test -n "$cwd"; and test "$cwd" != "$PWD"
 		builtin cd -- "$cwd"
 	end
 	rm -f -- "$tmp"
 end
 
 if not set -q WAYLAND_DISPLAY; and test "$XDG_VTNR" = "1"
-    exec Hyprland
+   exec start-hyprland
+end
+
+# Add local bin to PATH
+fish_add_path -p "$HOME/.local/bin"
+
+# Lazy-load emsdk - only source when emsdk commands are used
+set -g EMSDK_LOADED 0
+function __emsdk_lazy_load
+    if test $EMSDK_LOADED -eq 0
+        source "/home/alex/emsdk/emsdk_env.fish"
+        set -g EMSDK_LOADED 1
+    end
+end
+
+# Wrapper functions for common emsdk commands
+function emcc
+    __emsdk_lazy_load
+    command emcc $argv
+end
+
+function em++
+    __emsdk_lazy_load
+    command em++ $argv
+end
+
+function emconfigure
+    __emsdk_lazy_load
+    command emconfigure $argv
+end
+
+function emmake
+    __emsdk_lazy_load
+    command emmake $argv
 end
