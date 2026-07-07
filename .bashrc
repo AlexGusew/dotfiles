@@ -1,3 +1,4 @@
+export PATH="/home/alex/.nvm/versions/node/v22.20.0/bin:$PATH"
 #
 # ~/.bashrc
 #

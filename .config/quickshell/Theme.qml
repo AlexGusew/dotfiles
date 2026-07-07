@@ -23,19 +23,20 @@ QtObject {
     readonly property color textError:     "#cc3333"
 
     // ── Typography ────────────────────────────────────────────────
-    readonly property string font:  "JetBrainsMono Nerd Font"
-    readonly property int fontXs:   10  // uppercase labels
-    readonly property int fontSm:   11  // bar
-    readonly property int fontBase: 12  // list items
-    readonly property int fontMd:   13  // search, small inputs
-    readonly property int fontLg:   14  // overlay inputs
-    readonly property int fontXl:   20  // headings
+    readonly property string font:  "SourceCodePro Nerd Font"
+    readonly property int fontXs:   8  // uppercase labels
+    readonly property int fontSm:   9  // bar
+    readonly property int fontBase: 10  // list items
+    readonly property int fontMd:   11  // search, small inputs
+    readonly property int fontLg:   12  // overlay inputs
+    readonly property int fontXl:   18  // headings
 
     // ── Geometry ──────────────────────────────────────────────────
-    readonly property int radiusSm: 3
-    readonly property int radiusMd: 6
-    readonly property int radiusLg: 8
+    readonly property int radiusSm: 2
+    readonly property int radiusMd: 4
+    readonly property int radiusLg: 6
 
-    readonly property int fieldHeight: 52
-    readonly property int barHeight:   30
+    readonly property int fieldHeight:   52
+    readonly property int barHeight:     26
+    readonly property int listRowHeight: 28
 }

@@ -12,7 +12,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     color: "transparent"
 
-    width: 360
+    width: 300
     height: Math.max(1, notifCol.implicitHeight)
 
     NotificationServer {
@@ -35,7 +35,7 @@ PanelWindow {
                 required property var modelData
 
                 width: notifCol.width
-                height: toastLayout.implicitHeight + 32
+                height: toastLayout.implicitHeight + 24
                 color: Theme.surface
                 radius: Theme.radiusMd
                 border.width: 1
@@ -43,7 +43,7 @@ PanelWindow {
 
                 // Left accent bar
                 Rectangle {
-                    width: 3
+                    width: 2
                     height: parent.height - 2
                     anchors { left: parent.left; leftMargin: 1; verticalCenter: parent.verticalCenter }
                     radius: Theme.radiusMd
@@ -59,7 +59,7 @@ PanelWindow {
 
                 ColumnLayout {
                     id: toastLayout
-                    anchors { fill: parent; leftMargin: 18; rightMargin: 16; topMargin: 14; bottomMargin: 14 }
+                    anchors { fill: parent; leftMargin: 14; rightMargin: 12; topMargin: 12; bottomMargin: 12 }
                     spacing: 4
 
                     // App name — uppercase label style

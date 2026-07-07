@@ -9,8 +9,8 @@ PanelWindow {
     visible: false
 
     anchors { top: true }
-    width: 220
-    height: Theme.barHeight + 56
+    width: 200
+    height: Theme.barHeight + 48
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     color: "transparent"
@@ -59,8 +59,8 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: 220
-        height: 48
+        width: 200
+        height: 40
         anchors { top: parent.top; horizontalCenter: parent.horizontalCenter }
         anchors.topMargin: Theme.barHeight + 8
 
@@ -88,7 +88,7 @@ PanelWindow {
                     return "\uDB81\uDD7E"
                 }
                 color: Theme.textSecondary
-                font.pixelSize: 16
+                font.pixelSize: Theme.fontLg
                 font.family: Theme.font
             }
 

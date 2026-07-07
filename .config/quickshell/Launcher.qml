@@ -33,8 +33,8 @@ PanelWindow {
         }
 
         Rectangle {
-            width: 580
-            height: Math.min(480, parent.height * 0.75)
+            width: 440
+            height: Math.min(400, parent.height * 0.75)
             anchors.centerIn: parent
             color: Theme.surface
             radius: Theme.radiusSm
@@ -50,10 +50,10 @@ PanelWindow {
                 // Search field
                 Item {
                     Layout.fillWidth: true
-                    height: 46
+                    height: 38
 
                     Text {
-                        anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
+                        anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
                         text: "Search\u2026"
                         color: Theme.textDim
                         font.pixelSize: Theme.fontMd
@@ -63,7 +63,7 @@ PanelWindow {
 
                     TextInput {
                         id: searchInput
-                        anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
+                        anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                         verticalAlignment: TextInput.AlignVCenter
                         color: Theme.textPrimary
                         font.pixelSize: Theme.fontMd
@@ -111,7 +111,7 @@ PanelWindow {
                         required property int index
 
                         width: appList.width
-                        height: 36
+                        height: Theme.listRowHeight
 
                         function launch() {
                             modelData.execute()
@@ -132,7 +132,7 @@ PanelWindow {
                         }
 
                         Text {
-                            anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+                            anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
                             text: modelData.name
                             color: appList.currentIndex === index ? Theme.textPrimary : Theme.textMuted
                             font.pixelSize: Theme.fontBase

@@ -1,7 +1,9 @@
 singleton Theme 1.0 Theme.qml
+PopupCard 1.0 PopupCard.qml
 Bar 1.0 Bar.qml
 Launcher 1.0 Launcher.qml
 Notifications 1.0 Notifications.qml
 BluetoothPopup 1.0 BluetoothPopup.qml
 AudioPopup 1.0 AudioPopup.qml
+PowerPopup 1.0 PowerPopup.qml
 VolumeOSD 1.0 VolumeOSD.qml

@@ -62,6 +62,7 @@ function y
 end
 
 if not set -q WAYLAND_DISPLAY; and test "$XDG_VTNR" = "1"
+   set -gx XDG_CURRENT_DESKTOP Hyprland
    exec start-hyprland
 end
 
@@ -97,3 +98,6 @@ function emmake
     __emsdk_lazy_load
     command emmake $argv
 end
+
+# OpenClaw Completion
+test -f "/home/alex/.openclaw/completions/openclaw.fish"; and source "/home/alex/.openclaw/completions/openclaw.fish"
