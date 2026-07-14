@@ -72,63 +72,6 @@ MouseArea {
                 spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
 
-                // Battery
-                Row {
-                    visible: UPower.displayDevice !== null && (UPower.displayDevice?.isPresent ?? false)
-                    spacing: 3
-
-                    Text {
-                        property var dev: UPower.displayDevice
-                        property bool charging: dev?.state === UPowerDeviceState.Charging
-                                             || dev?.state === UPowerDeviceState.PendingCharge
-                        property int pct: Math.round((dev?.percentage ?? 0) * 100)
-                        text: {
-                            if (charging) {
-                                if (pct >= 90) return "\uDB80\uDC85"
-                                if (pct >= 80) return "\uDB80\uDC8B"
-                                if (pct >= 60) return "\uDB80\uDC8A"
-                                if (pct >= 40) return "\uDB80\uDC88"
-                                if (pct >= 20) return "\uDB80\uDC87"
-                                return "\uDB80\uDC86"
-                            }
-                            if (pct >= 90) return "\uDB80\uDC79"
-                            if (pct >= 80) return "\uDB80\uDC82"
-                            if (pct >= 70) return "\uDB80\uDC81"
-                            if (pct >= 60) return "\uDB80\uDC80"
-                            if (pct >= 50) return "\uDB80\uDC7F"
-                            if (pct >= 40) return "\uDB80\uDC7E"
-                            if (pct >= 30) return "\uDB80\uDC7D"
-                            if (pct >= 20) return "\uDB80\uDC7C"
-                            if (pct >= 10) return "\uDB80\uDC7B"
-                            return "\uDB80\uDC83"
-                        }
-                        color: {
-                            if (charging) return Theme.textPrimary
-                            if (pct <= 15) return "#ff5555"
-                            if (pct <= 30) return "#ffaa55"
-                            return Theme.textSecondary
-                        }
-                        font.pixelSize: Theme.fontBase
-                        font.family: Theme.font
-                    }
-
-                    Text {
-                        property var dev: UPower.displayDevice
-                        property bool charging: dev?.state === UPowerDeviceState.Charging
-                                             || dev?.state === UPowerDeviceState.PendingCharge
-                        property int pct: Math.round((dev?.percentage ?? 0) * 100)
-                        text: pct + "%"
-                        color: {
-                            if (charging) return Theme.textPrimary
-                            if (pct <= 15) return "#ff5555"
-                            if (pct <= 30) return "#ffaa55"
-                            return Theme.textSecondary
-                        }
-                        font.pixelSize: Theme.fontBase
-                        font.family: Theme.font
-                    }
-                }
-
                 // Volume icon
                 Text {
                     property var sink: Pipewire.defaultAudioSink
@@ -161,6 +104,15 @@ MouseArea {
                     font.pixelSize: Theme.fontBase
                     font.family: Theme.font
                     MouseArea { anchors.fill: parent; onClicked: bar.btClicked() }
+                }
+
+                // Theme mode (light / dark / auto)
+                Text {
+                    text: Theme.mode === "light" ? "" : Theme.mode === "dark" ? "" : ""
+                    color: Theme.textSecondary
+                    font.pixelSize: Theme.fontBase
+                    font.family: Theme.font
+                    MouseArea { anchors.fill: parent; onClicked: Theme.cycleMode() }
                 }
 
                 // Power menu
@@ -226,10 +178,68 @@ MouseArea {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            // Clock
+            // Battery + Clock
             Row {
                 spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
+
+                // Battery
+                Row {
+                    visible: UPower.displayDevice !== null && (UPower.displayDevice?.isPresent ?? false)
+                    spacing: 3
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        property var dev: UPower.displayDevice
+                        property bool charging: dev?.state === UPowerDeviceState.Charging
+                                             || dev?.state === UPowerDeviceState.PendingCharge
+                        property int pct: Math.round((dev?.percentage ?? 0) * 100)
+                        text: {
+                            if (charging) {
+                                if (pct >= 90) return "󰂅"
+                                if (pct >= 80) return "󰂋"
+                                if (pct >= 60) return "󰂊"
+                                if (pct >= 40) return "󰂈"
+                                if (pct >= 20) return "󰂇"
+                                return "󰂆"
+                            }
+                            if (pct >= 90) return "󰁹"
+                            if (pct >= 80) return "󰂂"
+                            if (pct >= 70) return "󰂁"
+                            if (pct >= 60) return "󰂀"
+                            if (pct >= 50) return "󰁿"
+                            if (pct >= 40) return "󰁾"
+                            if (pct >= 30) return "󰁽"
+                            if (pct >= 20) return "󰁼"
+                            if (pct >= 10) return "󰁻"
+                            return "󰂃"
+                        }
+                        color: {
+                            if (charging) return Theme.textPrimary
+                            if (pct <= 15) return "#ff5555"
+                            if (pct <= 30) return "#ffaa55"
+                            return Theme.textSecondary
+                        }
+                        font.pixelSize: Theme.fontBase
+                        font.family: Theme.font
+                    }
+
+                    Text {
+                        property var dev: UPower.displayDevice
+                        property bool charging: dev?.state === UPowerDeviceState.Charging
+                                             || dev?.state === UPowerDeviceState.PendingCharge
+                        property int pct: Math.round((dev?.percentage ?? 0) * 100)
+                        text: pct + "%"
+                        color: {
+                            if (charging) return Theme.textPrimary
+                            if (pct <= 15) return "#ff5555"
+                            if (pct <= 30) return "#ffaa55"
+                            return Theme.textSecondary
+                        }
+                        font.pixelSize: Theme.fontBase
+                        font.family: Theme.font
+                    }
+                }
 
                 Text {
                     id: clockTime
