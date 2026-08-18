@@ -1,9 +1,7 @@
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
-import Quickshell.Bluetooth
 import Quickshell.Io
-import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import QtQuick
 
@@ -11,10 +9,6 @@ PanelWindow {
     id: bar
     required property var modelData
     screen: modelData
-
-    signal btClicked()
-    signal audioClicked()
-    signal powerClicked()
 
     anchors { top: true; left: true; right: true }
     height: Theme.barHeight
@@ -26,15 +20,15 @@ PanelWindow {
         // Center — workspaces + status
         Row {
             anchors.centerIn: parent
-            spacing: 24
+            spacing: 12
 
             // Workspaces
             Row {
-                spacing: 14
+                spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
 
                 Repeater {
-                    model: Hyprland.workspaces.values
+                    model: Hyprland.workspaces.values.filter(w => w.id > 0)
 
                     Item {
                         required property HyprlandWorkspace modelData
@@ -45,14 +39,13 @@ PanelWindow {
                         Text {
                             id: wsLabel
                             anchors.centerIn: parent
-                            text: parent.modelData.id
-                            color: parent.modelData.focused ? Theme.textPrimary : Theme.textMuted
+                            text: parent.modelData.focused ? "[" + parent.modelData.id + "]" : parent.modelData.id + ""
+                            color: Theme.textPrimary
                             font.pixelSize: Theme.fontBase
                             font.family: Theme.font
-                            font.weight: parent.modelData.focused ? Font.Medium : Font.Normal
                         }
 
-MouseArea {
+                        MouseArea {
                             anchors.fill: parent
                             onClicked: parent.modelData.activate()
                         }
@@ -60,76 +53,40 @@ MouseArea {
                 }
             }
 
-            Rectangle {
-                width: 1
-                height: Theme.barHeight * 0.4
-                color: Theme.borderFocus
-                anchors.verticalCenter: parent.verticalCenter
-            }
 
-            // Battery + Volume + Bluetooth
+            // Configs + Language + Battery + Clock
             Row {
                 spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
 
-                // Volume icon
+                // Configs popup (gear) — opens/hides the configs terminal
                 Text {
-                    property var sink: Pipewire.defaultAudioSink
-                    visible: Pipewire.ready
-                    text: {
-                        if (!sink || !sink.audio || sink.audio.muted || sink.audio.volume === 0) return "\uDB81\uDF5F"
-                        if (sink.audio.volume < 0.34)                                             return "\uDB81\uDD7F"
-                        if (sink.audio.volume < 0.67)                                             return "\uDB81\uDD80"
-                        return "\uDB81\uDD7E"
-                    }
-                    color: (!sink || !sink.audio || sink.audio.muted) ? Theme.textMuted : Theme.textSecondary
-                    font.pixelSize: Theme.fontBase
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: ""
+                    color: Theme.textPrimary
+                    font.pixelSize: Theme.fontLg
                     font.family: Theme.font
-                    MouseArea { anchors.fill: parent; onClicked: bar.audioClicked() }
-                }
+                    width: 10
 
-                // Bluetooth icon
-                Text {
-                    visible: Bluetooth.defaultAdapter !== null
-                    text: {
-                        if (!Bluetooth.defaultAdapter?.enabled) return "\uDB80\uDCB2"
-                        var n = Bluetooth.defaultAdapter?.devices?.values?.filter(d => d.connected).length ?? 0
-                        return n > 0 ? "\uDB80\uDCB1" : "\uDB80\uDCAF"
+                    Process {
+                        id: configsToggle
+                        command: ["fish", "/home/alex/.config/quickshell/scripts/configs.fish", "toggle"]
                     }
-                    color: {
-                        if (!Bluetooth.defaultAdapter?.enabled) return Theme.textMuted
-                        var n = Bluetooth.defaultAdapter?.devices?.values?.filter(d => d.connected).length ?? 0
-                        return n > 0 ? Theme.textPrimary : Theme.textSecondary
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: { configsToggle.running = false; configsToggle.running = true }
                     }
-                    font.pixelSize: Theme.fontBase
-                    font.family: Theme.font
-                    MouseArea { anchors.fill: parent; onClicked: bar.btClicked() }
-                }
-
-                // Theme mode (light / dark / auto)
-                Text {
-                    text: Theme.mode === "light" ? "" : Theme.mode === "dark" ? "" : ""
-                    color: Theme.textSecondary
-                    font.pixelSize: Theme.fontBase
-                    font.family: Theme.font
-                    MouseArea { anchors.fill: parent; onClicked: Theme.cycleMode() }
-                }
-
-                // Power menu
-                Text {
-                    text: ""
-                    color: Theme.textSecondary
-                    font.pixelSize: Theme.fontBase
-                    font.family: Theme.font
-                    MouseArea { anchors.fill: parent; onClicked: bar.powerClicked() }
                 }
 
                 // Language indicator
                 Text {
+                    width: 16
                     id: langText
+                    anchors.verticalCenter: parent.verticalCenter
                     property string lang: "en"
                     text: lang
-                    color: Theme.textSecondary
+                    color: Theme.textPrimary
                     font.pixelSize: Theme.fontBase
                     font.family: Theme.font
 
@@ -169,27 +126,15 @@ MouseArea {
                         }
                     }
                 }
-            }
-
-            Rectangle {
-                width: 1
-                height: Theme.barHeight * 0.4
-                color: Theme.borderFocus
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            // Battery + Clock
-            Row {
-                spacing: 8
-                anchors.verticalCenter: parent.verticalCenter
 
                 // Battery
                 Row {
                     visible: UPower.displayDevice !== null && (UPower.displayDevice?.isPresent ?? false)
-                    spacing: 3
+                    spacing: 2
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
+                        anchors.verticalCenter: parent.verticalCenter
                         property var dev: UPower.displayDevice
                         property bool charging: dev?.state === UPowerDeviceState.Charging
                                              || dev?.state === UPowerDeviceState.PendingCharge
@@ -218,31 +163,107 @@ MouseArea {
                             if (charging) return Theme.textPrimary
                             if (pct <= 15) return "#ff5555"
                             if (pct <= 30) return "#ffaa55"
-                            return Theme.textSecondary
+                            return Theme.textPrimary
                         }
+                        font.pixelSize: Theme.fontLg
+                        font.family: Theme.font
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        property var dev: UPower.displayDevice
+                        property bool charging: dev?.state === UPowerDeviceState.Charging
+                                             || dev?.state === UPowerDeviceState.PendingCharge
+                        property int pct: Math.round((dev?.percentage ?? 0) * 100)
+                        text: pct + ""
+                        color: {
+                            if (charging) return Theme.textPrimary
+                            if (pct <= 15) return "#ff5555"
+                            if (pct <= 30) return "#ffaa55"
+                            return Theme.textPrimary
+                        }
+                        font.pixelSize: Theme.fontBase
+                        font.family: Theme.font
+                        horizontalAlignment: Text.AlignLeft
+                        width: batteryPctMetrics.width
+                    }
+
+                    TextMetrics {
+                        id: batteryPctMetrics
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontBase
+                        text: "100"
+                    }
+                }
+
+                // Volume — single block-height char (1 of 8 levels) + percentage, queried via wpctl
+                Row {
+                    id: volumeRow
+                    spacing: 2
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    property real vol: 0
+                    property bool muted: false
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: -3
+                        property var levels: ["▁", "▂", "▃", "▄", "▅"]
+                        text: levels[Math.max(0, Math.min(4, Math.floor(volumeRow.vol * 5)))]
+                        color: volumeRow.muted ? Theme.textMuted : Theme.textPrimary
                         font.pixelSize: Theme.fontBase
                         font.family: Theme.font
                     }
 
                     Text {
-                        property var dev: UPower.displayDevice
-                        property bool charging: dev?.state === UPowerDeviceState.Charging
-                                             || dev?.state === UPowerDeviceState.PendingCharge
-                        property int pct: Math.round((dev?.percentage ?? 0) * 100)
-                        text: pct + "%"
-                        color: {
-                            if (charging) return Theme.textPrimary
-                            if (pct <= 15) return "#ff5555"
-                            if (pct <= 30) return "#ffaa55"
-                            return Theme.textSecondary
-                        }
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Math.round(volumeRow.vol * 100) + ""
+                        color: volumeRow.muted ? Theme.textMuted : Theme.textPrimary
                         font.pixelSize: Theme.fontBase
                         font.family: Theme.font
+                        horizontalAlignment: Text.AlignLeft
+                        width: volPctMetrics.width
                     }
+
+                    TextMetrics {
+                        id: volPctMetrics
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontBase
+                        text: "100"
+                    }
+
+                    // Query actual volume on each change — bypasses unbound node issue (same as VolumeOSD.qml)
+                    Process {
+                        id: volQuery
+                        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
+                        stdout: SplitParser {
+                            onRead: line => {
+                                var m = line.match(/Volume:\s+([\d.]+)/)
+                                if (m) volumeRow.vol = parseFloat(m[1])
+                                volumeRow.muted = line.includes("[MUTED]")
+                            }
+                        }
+                    }
+
+                    Process {
+                        command: ["pactl", "subscribe"]
+                        running: true
+                        stdout: SplitParser {
+                            onRead: line => {
+                                if (line.includes("'change'") && line.includes(" sink #")) {
+                                    volQuery.running = false
+                                    volQuery.running = true
+                                }
+                            }
+                        }
+                    }
+
+                    Component.onCompleted: volQuery.running = true
                 }
 
                 Text {
                     id: clockTime
+                    anchors.verticalCenter: parent.verticalCenter
                     color: Theme.textPrimary
                     font.pixelSize: Theme.fontBase
                     font.family: Theme.font
@@ -253,7 +274,8 @@ MouseArea {
 
                 Text {
                     id: clockDate
-                    color: Theme.textMuted
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Theme.textPrimary
                     font.pixelSize: Theme.fontBase
                     font.family: Theme.font
                     function update() { text = Qt.formatDateTime(new Date(), "ddd d MMM") }

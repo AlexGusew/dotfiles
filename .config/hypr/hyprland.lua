@@ -10,14 +10,100 @@ local terminal = "kitty"
 local fileManager = "kitty -e yazi"
 local menu = "wofi --show drun"
 local browser = "firefox"
-local appLauncher = "kitty --single-instance --class cliphist-fzf --hold=no -e ~/.config/hypr/app-launcher.fish"
+local appLauncher = "fish ~/.config/hypr/app-launcher-toggle.fish"
+
+-----------------------------------
+---- SAKURA LIVE WALLPAPER ----
+-----------------------------------
+
+-- nsakura live wallpaper: true wlr-layer-shell background panel (kitten
+-- panel), one per monitor -- not a managed window, so no window rule needed.
+-- Colors are synced live to the light/dark toggle by Theme.qml. Lifecycle is
+-- driven by monitor.added/monitor.removed below so it follows hotplug.
+local WALLPAPER_BIN = "/home/alex/.local/bin/nsakura --sway=0.35"
+
+-- Idempotent: kill any existing wallpaper instance for this monitor name,
+-- clean up its socket, and (if spawn) launch a fresh one. Safe to call
+-- repeatedly for the same name -- used from boot, monitor.added, and
+-- monitor.removed alike, so there's one code path instead of three.
+local function sakura_wallpaper_cmd(name, spawn)
+	local sock = "/tmp/kitty-bg-" .. name .. ".sock"
+	-- Find the kitty process by who has the socket file open (`fuser`), not
+	-- by matching its command line (`pgrep -f`) -- the latter self-matches,
+	-- because hl.exec_cmd runs this whole string through a shell whose own
+	-- command line then also contains the search pattern, causing the loop
+	-- to kill its own invoking shell before ever reaching `kitten panel`
+	-- (confirmed empirically). nsakura is its own session leader (confirmed
+	-- via `ps`), so it won't die from kitty's pty closing -- reap it via
+	-- `pgrep -P` (by pid, not text, so it can't self-match either) before
+	-- killing the kitty parent.
+	local cmd = "for cpid in $(fuser "
+		.. sock
+		.. " 2>/dev/null); do "
+		.. "for gpid in $(pgrep -P $cpid); do kill $gpid 2>/dev/null; done; "
+		.. "kill $cpid 2>/dev/null; done; rm -f "
+		.. sock
+
+	if spawn then
+		-- Resolve current theme colors at spawn time instead of hardcoding a
+		-- dark default -- mirrors Theme.qml's own mode resolution exactly
+		-- (mode file, falling back to gsettings color-scheme for "auto") so a
+		-- hotplugged or first-boot monitor never flashes the wrong colors
+		-- while waiting for the next theme toggle to correct it.
+		local colorPick = "mode=$(cat ~/.config/quickshell/theme-mode.txt 2>/dev/null | tr -d '[:space:]'); "
+			.. 'if [ "$mode" = light ]; then dark=0; '
+			.. 'elif [ "$mode" = dark ]; then dark=1; '
+			.. "else scheme=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null); "
+			.. 'case "$scheme" in *dark*) dark=1 ;; *) dark=0 ;; esac; fi; '
+			.. 'if [ "$dark" = 1 ]; then bg=#000000; fg=#ffffff; else bg=#ffffff; fg=#000000; fi; '
+
+		-- Small delay: monitor.added can fire before the output is fully
+		-- ready for a layer-shell client to bind to (confirmed empirically --
+		-- the exact same command run a moment later by hand works fine).
+		cmd = cmd
+			.. "; sleep 0.5; "
+			.. colorPick
+			.. "kitten panel --edge=background --output-name="
+			.. name
+			.. " --app-id=kitty-bg-"
+			.. name
+			.. " -o allow_remote_control=yes --listen-on=unix:"
+			.. sock
+			.. ' -o background="$bg" -o foreground="$fg"'
+			.. " -- "
+			.. WALLPAPER_BIN
+	end
+
+	hl.exec_cmd(cmd)
+end
+
+local function sakura_wallpaper_start(name)
+	sakura_wallpaper_cmd(name, true)
+end
+local function sakura_wallpaper_stop(name)
+	sakura_wallpaper_cmd(name, false)
+end
+
+hl.on("monitor.added", function(mon)
+	if mon and mon.name and mon.name ~= "" then
+		sakura_wallpaper_start(mon.name)
+	end
+end)
+
+hl.on("monitor.removed", function(mon)
+	if mon and mon.name and mon.name ~= "" then
+		sakura_wallpaper_stop(mon.name)
+	end
+end)
 
 -------------------
 ---- AUTOSTART ----
 -------------------
 
 hl.on("hyprland.start", function()
-	hl.exec_cmd("kitty --class kitty-bg --start-as=hidden")
+	for _, mon in ipairs(hl.get_monitors()) do
+		sakura_wallpaper_start(mon.name)
+	end
 	hl.exec_cmd(terminal)
 	hl.exec_cmd(browser)
 	hl.exec_cmd("systemctl --user start hyprpolkitagent")
@@ -26,9 +112,10 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("blueman-applet")
 	hl.exec_cmd("hyprsunset")
 	hl.exec_cmd("quickshell")
+	hl.exec_cmd("fish /home/alex/.config/quickshell/scripts/configs.fish start")
 	hl.exec_cmd("wl-paste --type text --watch cliphist store")
 	hl.exec_cmd("~/.config/hypr/build-app-cache.fish")
-	hl.exec_cmd("snappy-switcher --daemon")
+	-- hl.exec_cmd("snappy-switcher --daemon")
 end)
 
 -----------------------------
@@ -56,37 +143,37 @@ hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
 hl.config({
 	general = {
-		gaps_in = 5,
-		gaps_out = 20,
+		gaps_in = 2,
+		gaps_out = 8,
 		border_size = 2,
 		col = {
-			active_border = { colors = { "rgba(33ccffee)", "rgba(00ff99ee)" }, angle = 45 },
-			inactive_border = "rgba(595959aa)",
+			active_border = "rgba(888888ff)",
+			inactive_border = "rgba(00000000)",
 		},
-		resize_on_border = false,
+		resize_on_border = true,
 		layout = "master",
-		allow_tearing = true,
+		allow_tearing = false,
 	},
 })
 
+-- hl.config({
+-- 	decoration = {
+-- 		-- rounding = 10,
+-- 		-- rounding_power = 2,
+-- 		active_opacity = 1.0,
+-- 		inactive_opacity = 1.0,
+-- 		blur = {
+-- 			enabled = false,
+-- 			size = 3,
+-- 			passes = 1,
+-- 			vibrancy = 0.1696,
+-- 		},
+-- 	},
+-- })
+
 hl.config({
 	decoration = {
-		rounding = 10,
-		rounding_power = 2,
-		active_opacity = 1.0,
-		inactive_opacity = 1.0,
-		shadow = {
-			enabled = false,
-			range = 4,
-			render_power = 3,
-			color = "rgba(1a1a1aee)",
-		},
-		blur = {
-			enabled = false,
-			size = 3,
-			passes = 1,
-			vibrancy = 0.1696,
-		},
+		shadow = { enabled = false },
 	},
 })
 
@@ -103,6 +190,9 @@ hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
 
 hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
 hl.animation({ leaf = "border", enabled = true, speed = 5.39, bezier = "easeOutQuint" })
+-- One 360deg sweep of the active border's gradient when a window takes focus:
+-- the bright end travels around the window once and settles back at 45deg.
+hl.animation({ leaf = "borderangle", enabled = true, speed = 9, bezier = "easeOutQuint", style = "once" })
 hl.animation({ leaf = "windows", enabled = true, speed = 4.79, bezier = "easeOutQuint" })
 hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.1, bezier = "easeOutQuint", style = "popin 87%" })
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "linear", style = "popin 87%" })
@@ -118,9 +208,10 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almo
 hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.21, bezier = "almostLinear", style = "fade" })
 hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
 
--- Smart gaps
-hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
-hl.workspace_rule({ workspace = "f[1]", gaps_out = 0, gaps_in = 0 })
+-- Smart gaps -- and, for the same reason, no border: a lone tiled window or a
+-- fullscreen one has nothing to be distinguished from, so it goes edge to edge.
+hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0, border_size = 0 })
+hl.workspace_rule({ workspace = "f[1]", gaps_out = 0, gaps_in = 0, border_size = 0 })
 
 hl.config({
 	dwindle = { preserve_split = true },
@@ -164,11 +255,11 @@ hl.config({
 			-- accel_speed = 1,
 			tap_to_click = true,
 			tap_and_drag = true,
-			drag_lock = false,
+			drag_lock = 2,
 			disable_while_typing = true,
 			clickfinger_behavior = true,
 			middle_button_emulation = false,
-			scroll_factor = 0.2,
+			scroll_factor = 0.3,
 		},
 	},
 })
@@ -183,16 +274,18 @@ hl.device({
 ------------------
 
 -- 3-finger swipe left/right: switch workspace (macOS: swipe between spaces)
-hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
+hl.gesture({
+	scale = 0.3,
+	fingers = 3,
+	direction = "horizontal",
+	action = "workspace",
+})
 
 -- 3-finger swipe up: fullscreen active window (closest to macOS Mission Control; Hyprland has no overview)
 hl.gesture({ fingers = 3, direction = "up", action = "fullscreen" })
 
 -- 3-finger swipe down: toggle scratchpad (macOS: show desktop / App Exposé)
 hl.gesture({ fingers = 3, direction = "down", action = "special", workspace_name = "magic" })
-
--- 2-finger pinch: continuous zoom into cursor (macOS: Accessibility trackpad zoom)
-hl.gesture({ fingers = 2, direction = "pinch", action = "cursor_zoom", zoom_level = 1, mode = "live" })
 
 -- 4-finger pinch in: open app launcher (macOS: Launchpad)
 hl.gesture({
@@ -215,6 +308,7 @@ hl.bind(mainMod .. " + M", hl.dsp.exit())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(appLauncher))
+hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("fish /home/alex/.config/quickshell/scripts/configs.fish toggle"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + backslash", hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
@@ -256,15 +350,12 @@ hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 -- Clipboard picker
 hl.bind(
 	mainMod .. " + CTRL + V",
-	hl.dsp.exec_cmd("kitty --class cliphist-fzf --hold=no -e ~/Projects/clipfzf/clipfzf.fish")
+	hl.dsp.exec_cmd("kitty --single-instance --class cliphist-fzf --hold=no -e ~/Projects/clipfzf/clipfzf.fish")
 )
 
 -- Move/resize with mouse
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
-
--- Middle click: clear clipboard
-hl.bind("mouse:274", hl.dsp.exec_cmd("wl-copy -pc"))
 
 -- Screenshots
 hl.bind("Print", hl.dsp.exec_cmd("grimblast --freeze copy area"))
@@ -291,8 +382,16 @@ hl.bind(
 	hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
 	{ locked = true, repeating = true }
 )
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"), { locked = true, repeating = true })
+hl.bind(
+	"XF86MonBrightnessUp",
+	hl.dsp.exec_cmd("~/.config/hypr/brightness.fish +5"),
+	{ locked = true, repeating = true }
+)
+hl.bind(
+	"XF86MonBrightnessDown",
+	hl.dsp.exec_cmd("~/.config/hypr/brightness.fish -5"),
+	{ locked = true, repeating = true }
+)
 
 -- Media
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
@@ -334,6 +433,22 @@ hl.window_rule({
 })
 
 hl.window_rule({
+	name = "floating-bitwarden",
+	match = { title = "^Extension: \\(Bitwarden Password Manager\\).*$" },
+	float = true,
+})
+
+-- windowrulev1-style title match doesn't re-eval after Firefox extension
+-- popups rename themselves post-map, so float them on the title change event
+hl.on("window.title", function(win)
+	if win and win.title and win.title:match("^Extension: %(Bitwarden Password Manager%)") and not win.floating then
+		hl.dispatch(hl.dsp.window.float({ action = "on", window = "address:" .. win.address }))
+		hl.dispatch(hl.dsp.window.resize({ x = 600, y = 600, window = "address:" .. win.address }))
+		hl.dispatch(hl.dsp.window.center({ window = "address:" .. win.address }))
+	end
+end)
+
+hl.window_rule({
 	name = "termshell-panel-style",
 	match = { class = "^(termshell-panel)$" },
 	border_size = 0,
@@ -342,10 +457,20 @@ hl.window_rule({
 
 hl.window_rule({
 	name = "clipboard",
-	match = { class = "^(cliphist-fzf)|(kitty-bg)$" },
+	match = { class = "^(cliphist-fzf)$" },
 	float = true,
 	center = true,
 	size = "800 700",
+})
+
+hl.window_rule({
+	name = "quickshell-configs",
+	match = { class = "^(quickshell-configs)$" },
+	float = true,
+	center = true,
+	dim_around = true,
+	size = "1200 1000",
+	workspace = "special:configs silent",
 })
 
 hl.window_rule({
@@ -356,3 +481,4 @@ hl.window_rule({
 	move = "monitor_w-370 monitor_h-220",
 	size = "350 200",
 })
+

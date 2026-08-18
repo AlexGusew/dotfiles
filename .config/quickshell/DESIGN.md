@@ -64,6 +64,15 @@ SDDM cannot import QML singletons — token values are duplicated in `Main.qml` 
 - Title: left-anchored, capped at `width/3`, `textSecondary`
 - Workspaces: `anchors.centerIn` (never jumps when title changes), dot indicator on focused
 - Clock: right-anchored, time in `textPrimary`, date in `textMuted`
+- Configs button: single gear glyph () between workspaces and clock, toggles the Configs Terminal (see below)
+
+### Configs Terminal — `master.kdl` (zellij layout)
+
+- Not a QML surface — a real Wayland client: `kitty --class quickshell-configs` running `zellij attach quickshell-configs --create --default-layout ~/.config/quickshell/master.kdl`
+- Fixed 6-pane zellij layout: playerctl TUI + wiremix + power menu (top row; power menu is itself split top/bottom into power actions and a Dark/Light/Auto theme picker), bluetui + impala (bottom row)
+- Theme picker (`scripts/theme-picker.fish`) is an fzf menu that calls `qs ipc call theme set <dark|light|auto>`, handled by the `theme` `IpcHandler` in `shell.qml`, which sets `Theme.mode` live
+- Hyprland window rule: floating, centered, `1200×800` — one persistent instance, created at Hyprland startup
+- Lives on `special:configs` (hidden) until toggled; gear button and `SUPER+C` both run `scripts/configs.fish toggle`, which moves it to the active workspace (and focuses it) or back to `special:configs` (rebuilding the session from scratch in the background so every pane resets). Hyprland startup runs `scripts/configs.fish start` to spawn the first instance.
 
 ### App Launcher — `Launcher.qml`
 
@@ -95,6 +104,7 @@ SDDM cannot import QML singletons — token values are duplicated in `Main.qml` 
 | `~/.config/quickshell/Bar.qml` | Top bar | QuickShell |
 | `~/.config/quickshell/Launcher.qml` | App launcher | QuickShell |
 | `~/.config/quickshell/shell.qml` | Root wiring (bar+launcher+lock+IPC) | QuickShell |
+| `~/.config/quickshell/master.kdl` | Configs terminal | zellij (inside a kitty window managed by Hyprland) |
 | `/usr/share/sddm/themes/shadcn/Main.qml` | Login screen | SDDM |
 
 ---

@@ -33,6 +33,55 @@ Item {
         if (mode === "dark" || mode === "light") applySystemTheme(mode === "dark")
     }
 
+    // kitty-bg (the nsakura wallpaper terminal) is a separate long-running
+    // process — push its colors any time the resolved dark/light state
+    // changes, including via "auto" following the system.
+    onDarkChanged: {
+        Qt.callLater(syncWallpaperTerminal)
+        Qt.callLater(syncKittyTerminal)
+    }
+    Component.onCompleted: {
+        Qt.callLater(syncWallpaperTerminal)
+        Qt.callLater(syncKittyTerminal)
+    }
+
+    function syncWallpaperTerminal() {
+        var colors = "background=" + bg + " foreground=" + textPrimary
+        var script =
+            "for sock in /tmp/kitty-bg-*.sock; do " +
+            "[ -S \"$sock\" ] && kitten @ --to unix:\"$sock\" set-colors " + colors + "; " +
+            "done"
+        kittyBgSync.command = ["sh", "-c", script]
+        kittyBgSync.running = false
+        kittyBgSync.running = true
+    }
+
+    Process { id: kittyBgSync }
+
+    // Main interactive kitty terminal: unlike kitty-bg, this uses a full
+    // theme (all 16 ANSI colors + tab-bar colors), not just bg/fg, so it's
+    // driven from the two static theme-dark.conf/theme-light.conf files
+    // (kept in ~/.config/kitty/, decoupled from the vendored kitty-themes
+    // repo) rather than from Theme.qml's own palette. Rewriting
+    // current-theme.conf covers windows launched from now on; the
+    // `set-colors` push covers windows already open, exactly like
+    // syncWallpaperTerminal above.
+    function syncKittyTerminal() {
+        var src = dark
+            ? "/home/alex/.config/kitty/theme-dark.conf"
+            : "/home/alex/.config/kitty/theme-light.conf"
+        var script =
+            "cp '" + src + "' /home/alex/.config/kitty/current-theme.conf; " +
+            "for sock in /tmp/kitty.sock-*; do " +
+            "[ -S \"$sock\" ] && kitten @ --to unix:\"$sock\" set-colors --all --configured '" + src + "'; " +
+            "done"
+        kittySync.command = ["sh", "-c", script]
+        kittySync.running = false
+        kittySync.running = true
+    }
+
+    Process { id: kittySync }
+
     // Push Materia/Materia-light to GTK3 (gsettings) and GTK4/libadwaita apps
     // (Files, Firefox) so they follow the bar instead of only Theme.qml.
     // GTK4 has no live theme-name switch — apps read ~/.config/gtk-4.0/{gtk.css,assets}
@@ -91,7 +140,7 @@ Item {
     readonly property color textError:     "#cc3333"
 
     // ── Typography ────────────────────────────────────────────────
-    readonly property string font:  "SourceCodePro Nerd Font"
+    readonly property string font:  "SauceCodePro Nerd Font Mono"
     readonly property int fontXs:   8  // uppercase labels
     readonly property int fontSm:   9  // bar
     readonly property int fontBase: 10  // list items

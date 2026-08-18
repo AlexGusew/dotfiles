@@ -10,11 +10,7 @@ ShellRoot {
     // One bar per screen
     Variants {
         model: Quickshell.screens
-        Bar {
-            onBtClicked:    btPopup.toggle()
-            onAudioClicked: audioPopup.toggle()
-            onPowerClicked: powerPopup.toggle()
-        }
+        Bar {}
     }
 
     // App launcher — single overlay, primary screen
@@ -23,30 +19,19 @@ ShellRoot {
     // Notification toasts — bottom-right
     Notifications {}
 
-    // Bluetooth popup — top-right, below bar
-    BluetoothPopup { id: btPopup }
-    AudioPopup { id: audioPopup }
-    PowerPopup { id: powerPopup }
-
-    PanelWindow {
-        visible: audioPopup.visible
-        anchors { top: true; bottom: true; left: true; right: true }
-        WlrLayershell.layer: WlrLayer.Top
-        color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
-        MouseArea {
-            anchors.fill: parent
-            onClicked: audioPopup.visible = false
-        }
-    }
-
-    VolumeOSD {}
-
     // IPC: toggle launcher from SUPER+SPACE keybind
     IpcHandler {
         target: "launcher"
         function toggle(): void {
             launcher.toggle()
+        }
+    }
+
+    // IPC: set theme mode from the configs terminal's theme picker (Dark/Light/Auto)
+    IpcHandler {
+        target: "theme"
+        function set(mode: string): void {
+            Theme.mode = mode
         }
     }
 }

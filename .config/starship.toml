@@ -1,7 +1,30 @@
-
-[character] 
-success_symbol = '[\$](bold green)' 
+[character]
+success_symbol = '[\$](bold green)'
 error_symbol = '[x](bold red)'
+vicmd_symbol = '[❮](bold yellow)'
+
+[status]
+disabled = false
+symbol = "✖ "
+style = "bold red"
+format = '[\[$symbol$status\]]($style) '
+
+[cmd_duration]
+min_time = 2000
+format = "took [$duration]($style) "
+style = "bold yellow"
+
+[git_status]
+style = "bold red"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+conflicted = "=${count}"
+staged = "+${count}"
+modified = "!${count}"
+renamed = "»${count}"
+deleted = "✘${count}"
+stashed = "*${count}"
 
 [aws]
 symbol = "  "
@@ -35,6 +58,8 @@ symbol = " "
 
 [directory]
 read_only = " 󰌾"
+truncation_length = 4
+truncate_to_repo = true
 
 [docker_context]
 symbol = " "
@@ -52,8 +77,8 @@ symbol = " "
 symbol = " "
 
 [gcloud]
-symbol = "  "
-format = 'on [$symbol$account(\($region\))]($style) '
+symbol = "☁️ "
+format = '(on [$symbol$account(\($region\))]($style) )'
 
 [git_branch]
 symbol = " "
