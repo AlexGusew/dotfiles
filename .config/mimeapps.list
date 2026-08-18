@@ -1,0 +1,19 @@
+[Default Applications]
+text/html=firefox.desktop
+x-scheme-handler/http=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+x-scheme-handler/about=firefox.desktop
+x-scheme-handler/unknown=firefox.desktop
+x-scheme-handler/msteams=teams.desktop
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop
+x-scheme-handler/stirlingpdf=stirling-pdf-handler.desktop
+application/pdf=firefox.desktop
+image/png=firefox.desktop
+image/jpeg=firefox.desktop
+image/gif=firefox.desktop
+image/webp=firefox.desktop
+image/bmp=firefox.desktop
+image/tiff=firefox.desktop
+
+[Added Associations]
+image/x-3ds=org.kde.bluedevilwizard.desktop;
