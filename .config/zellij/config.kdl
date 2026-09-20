@@ -170,21 +170,26 @@ keybinds clear-defaults=true {
         bind "Ctrl Alt k" { MoveFocus "up"; }
         bind "Ctrl Alt l" { MoveFocusOrTab "right"; }
         bind "Ctrl Alt n" { NewPane; }
-        bind "Ctrl Alt p" {
-            Run "fish" "--no-config" "/home/alex/.config/zellij/scripts/pane-switcher.fish" {
-                floating true
-                close_on_exit true
-                name "Pane Switcher"
-                width "100%"
-                height "35%"
-                x "0%"
-                y "65%"
-            }
-        }
         bind "Ctrl Alt o" { MoveTab "right"; }
     }
     shared_except "locked" {
         bind "Alt Shift p" { ToggleGroupMarking; }
+        bind "F1" {
+            MessagePlugin "zellij:compact-bar" {
+                name "toggle_persisted_tooltip"
+                floating true
+                is_tooltip "true"
+            }
+        }
+        bind "Alt 1" { GoToTab 1; SwitchToMode "normal"; }
+        bind "Alt 2" { GoToTab 2; SwitchToMode "normal"; }
+        bind "Alt 3" { GoToTab 3; SwitchToMode "normal"; }
+        bind "Alt 4" { GoToTab 4; SwitchToMode "normal"; }
+        bind "Alt 5" { GoToTab 5; SwitchToMode "normal"; }
+        bind "Alt 6" { GoToTab 6; SwitchToMode "normal"; }
+        bind "Alt 7" { GoToTab 7; SwitchToMode "normal"; }
+        bind "Alt 8" { GoToTab 8; SwitchToMode "normal"; }
+        bind "Alt 9" { GoToTab 9; SwitchToMode "normal"; }
     }
     shared_except "locked" "entersearch" "renametab" "renamepane" "move" "prompt" "tmux" {
         bind "Alt h" { SwitchToMode "move"; }
@@ -335,6 +340,12 @@ plugins {
 // eg. "file:/path/to/my-plugin.wasm"
 // eg. "https://example.com/my-plugin.wasm"
 load_plugins {
+    "file:~/.config/zellij/plugins/zjframes.wasm" {
+        hide_frame_for_single_pane       "true"
+        hide_frame_except_for_search     "true"
+        hide_frame_except_for_scroll     "true"
+        hide_frame_except_for_fullscreen "true"
+    }
 }
 web_client {
     font "monospace"
@@ -357,16 +368,21 @@ web_client {
 // Choose the theme that is specified in the themes section.
 // Default: default
 // 
-theme "onedark"
+// VS Code "Dark Modern". Defined explicitly in the `themes` block at the bottom
+// of this file so the palette stays byte-identical to nvim
+// (~/.config/nvim/init.lua) and kitty (~/.config/kitty/theme.conf).
+theme "vscode-dark"
  
 // Theme to use when the host terminal reports a dark color palette.
 // Requires `theme_light` to also be set; otherwise `theme` is used.
 // 
-theme_dark "onedark"
+// Intentionally unset: this setup is dark-only, and kitty has no light variant,
+// so auto-switching would strand the terminal and nvim on a dark palette.
+// theme_dark "vscode-dark"
  
 // Theme to use when the host terminal reports a light color palette.
 // Requires `theme_dark` to also be set; otherwise `theme` is used.
-theme_light "iceberg-light"
+// theme_light "iceberg-light"
  
 // Choose the base input mode of zellij.
 // Default: normal
@@ -376,7 +392,7 @@ theme_light "iceberg-light"
 // Choose the path to the default shell that zellij will use for opening new panes
 // Default: $SHELL
 // 
-// default_shell "fish"
+default_shell "fish"
  
 // Choose the path to override cwd that zellij will use for opening new panes
 // 
@@ -385,7 +401,7 @@ theme_light "iceberg-light"
 // The name of the default layout to load on startup
 // Default: "default"
 // 
-default_layout "compact"
+default_layout "default"
  
 // The folder in which Zellij will look for layouts
 // (Requires restart)
@@ -411,8 +427,8 @@ default_layout "compact"
 //   - true (default, enabled)
 //   - false
 // 
-pane_frames true
-pane size=2
+// pane_frames true
+// pane size=2
  
 // When attaching to an existing session with other users,
 // should the session be mirrored (true)
@@ -638,3 +654,22 @@ focus_follows_mouse true
 // typically work best. Set to 0 to use the number of (physical) CPU cores.
 // Note: This only applies to web clients at the moment.
 // client_async_worker_tasks 4
+
+// VS Code "Dark Modern". ANSI values are VS Code's integrated-terminal
+// defaults, shared verbatim with nvim and kitty.
+// Selected via `theme "vscode-dark"` above.
+themes {
+    vscode-dark {
+        fg      "#D4D4D4"
+        bg      "#1F1F1F"
+        black   "#000000"
+        red     "#CD3131"
+        green   "#0DBC79"
+        yellow  "#E5E510"
+        blue    "#2472C8"
+        magenta "#BC3FBC"
+        cyan    "#11A8CD"
+        white   "#E5E5E5"
+        orange  "#CE9178"
+    }
+}
